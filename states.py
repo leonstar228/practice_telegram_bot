@@ -10,3 +10,6 @@ class WeatherState(StatesGroup):
 
 class FileState(StatesGroup):
     waiting_for_new_file_name = State()
+
+class FileUploadState(StatesGroup):
+    waiting_for_file = State()

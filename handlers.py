@@ -25,7 +25,7 @@ from keyboards import (
     admin_request_actions,
     file_actions
 )
-from states import RequestState, WeatherState, FileState
+from states import RequestState, WeatherState, FileState, FileUploadState
 from services import get_weather, STATUS_NAMES
 
 router = Router()
@@ -211,28 +211,30 @@ async def weather_result(message: Message, state: FSMContext):
 
 
 @router.message(F.text == "📎 Надіслати файл")
-async def file_instruction(message: Message):
+async def file_instruction(message: Message, state: FSMContext):
     await ensure_user(message)
+    await state.set_state(FileUploadState.waiting_for_file)
     await message.answer("Надішліть документ або фото одним повідомленням.")
 
-
-@router.message(F.document)
-async def document_handler(message: Message):
+@router.message(FileUploadState.waiting_for_file, F.document)
+async def document_handler(message: Message, state: FSMContext):
     user = await ensure_user(message)
     document = message.document
 
     await save_file(user["id"], document.file_id, document.file_name, document.mime_type)
 
+    await state.clear()
     await message.answer("Документ збережено в базі даних.")
 
 
-@router.message(F.photo)
-async def photo_handler(message: Message):
+@router.message(FileUploadState.waiting_for_file, F.photo)
+async def photo_handler(message: Message, state: FSMContext):
     user = await ensure_user(message)
     photo = message.photo[-1]
 
     await save_file(user["id"], photo.file_id, "photo.jpg", "image/jpeg")
 
+    await state.clear()
     await message.answer("Фото збережено в базі даних.")
 
 
